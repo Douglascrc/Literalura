@@ -12,14 +12,14 @@ public class Autor {
     @Column(name = "nome", nullable = false)
     private String nome;
     @Column(name = "ano_nascimento", nullable = false)
-    private String anoNascimento;
+    private int anoNascimento;
     @Column(name= "ano_morte", nullable = false)
-    private String anoMorte;
+    private int anoMorte;
 
     public Autor() {
     }
 
-    public Autor(String nome, String anoNascimento, String anoMorte) {
+    public Autor(String nome, int anoNascimento, int anoMorte) {
         this.nome = nome;
         this.anoNascimento = anoNascimento;
         this.anoMorte = anoMorte;

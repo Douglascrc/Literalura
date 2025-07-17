@@ -8,6 +8,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.InputMismatchException;
 import java.util.Scanner;
+
+import com.alura.literalura.DTO.AutorDTO;
 import com.alura.literalura.model.Autor;
 import com.fasterxml.jackson.databind.*;
 
@@ -87,23 +89,17 @@ public class Main {
                 JsonNode rootNode = mapper.readTree(response.body());
                 JsonNode resultsNode = rootNode.get("results");
 
+                System.out.println(resultsNode.size());
                 if (resultsNode.size() > 0) {
                     System.out.println("\nAutores encontrados:");
 
-                    for (int i = 0; i < resultsNode.size(); i++) {
-                        JsonNode bookNode = resultsNode.get(i);
+                    for (JsonNode bookNode : resultsNode) {
                         String title = bookNode.get("title").asText();
                         JsonNode authorsNode = bookNode.get("authors");
 
-                        for (int j = 0; j < authorsNode.size(); j++) {
-                            JsonNode authorNode = authorsNode.get(j);
-                            String name = authorNode.get("name").asText();
-                            String birthYear = authorNode.has("birth_year") ?
-                                    String.valueOf(authorNode.get("birth_year").asInt()) : "Desconhecido";
-                            String deathYear = authorNode.has("death_year") ?
-                                    String.valueOf(authorNode.get("death_year").asInt()) : "Presente";
-
-                            Autor autor = new Autor(name, birthYear, deathYear);
+                        for (JsonNode authorNode : authorsNode) {
+                            AutorDTO dto = mapper.treeToValue(authorNode, AutorDTO.class);
+                            Autor autor = new Autor(dto.nome(), dto.anoNascimento(), dto.anoMorte());
                             System.out.println("Livro: " + title);
                             System.out.println(autor);
                             System.out.println("------------------------------");
@@ -120,6 +116,36 @@ public class Main {
     }
 
     private void listarLivrosPorIdioma() {
+        System.out.println("Digite o idioma desejado (ex: pt-br, en, etc.):");
+        var idioma = leitura.nextLine().trim();
+
+        HttpClient client = HttpClient.newHttpClient();
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://gutendex.com/books/?languages=" + URLEncoder.encode(idioma, StandardCharsets.UTF_8)))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = client
+                    .send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode rootNode = mapper.readTree(response.body());
+                JsonNode resultsNode = rootNode.get("results");
+
+                if (resultsNode.size() > 0) {
+                    System.out.println("\nLivros encontrados no idioma " + idioma + ":");
+                    for (JsonNode bookNode : resultsNode) {
+                        String title = bookNode.get("title").asText();
+                        System.out.println("Título: " + title);
+                    }
+                } else {
+                    System.out.println("Nenhum livro encontrado no idioma: " + idioma);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Erro ao buscar livros por idioma: " + e.getMessage());
+        }
     }
 
     private void listarAutoresPorAno() {
